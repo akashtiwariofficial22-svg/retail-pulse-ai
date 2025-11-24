@@ -1,8 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useData } from '@/contexts/DataContext';
-import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
-import { AlertCircle, Map as MapIcon } from 'lucide-react';
-import 'leaflet/dist/leaflet.css';
+import { AlertCircle, Map as MapIcon, MapPin } from 'lucide-react';
 import { useMemo } from 'react';
 
 const GeoInsights = () => {
@@ -124,55 +122,95 @@ const GeoInsights = () => {
         </Card>
       </div>
 
-      {/* Map */}
-      <Card>
+      {/* Location Data Table */}
+      <Card className="mb-8">
         <CardHeader>
-          <CardTitle>Customer Density Heatmap</CardTitle>
+          <CardTitle>Location Density Analysis</CardTitle>
           <CardDescription>
-            Interactive map showing footfall density across locations
+            Top locations by customer footfall concentration
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="h-[600px] rounded-lg overflow-hidden">
-            <MapContainer
-              center={mapCenter}
-              zoom={13}
-              className="h-full w-full"
-              style={{ height: '100%', width: '100%' }}
-            >
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              {heatmapData.map((point, idx) => {
-                const intensity = point.count / maxCount;
-                const radius = 5 + intensity * 15;
-                const opacity = 0.3 + intensity * 0.5;
-                
-                return (
-                  <CircleMarker
-                    key={idx}
-                    center={[point.lat, point.lng]}
-                    radius={radius}
-                    pathOptions={{
-                      fillColor: 'hsl(190, 95%, 50%)',
-                      fillOpacity: opacity,
-                      color: 'hsl(220, 70%, 15%)',
-                      weight: 2,
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left p-2 font-medium">Location</th>
+                  <th className="text-left p-2 font-medium">Coordinates</th>
+                  <th className="text-right p-2 font-medium">Total Footfall</th>
+                  <th className="text-right p-2 font-medium">Intensity</th>
+                </tr>
+              </thead>
+              <tbody>
+                {heatmapData.slice(0, 20).map((point, idx) => {
+                  const intensity = point.count / maxCount;
+                  const intensityPercent = (intensity * 100).toFixed(0);
+                  
+                  return (
+                    <tr key={idx} className="border-b hover:bg-muted/50">
+                      <td className="p-2">
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-accent" />
+                          Location {idx + 1}
+                        </div>
+                      </td>
+                      <td className="p-2 font-mono text-xs">
+                        {point.lat.toFixed(4)}, {point.lng.toFixed(4)}
+                      </td>
+                      <td className="text-right p-2 font-medium">{point.count}</td>
+                      <td className="text-right p-2">
+                        <div className="flex items-center justify-end gap-2">
+                          <div className="w-20 h-2 bg-muted rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-accent"
+                              style={{ width: `${intensityPercent}%` }}
+                            />
+                          </div>
+                          <span className="text-xs text-muted-foreground w-10">{intensityPercent}%</span>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Visual Heatmap Representation */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Customer Density Visualization</CardTitle>
+          <CardDescription>
+            Visual representation of footfall intensity by location
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {heatmapData.slice(0, 24).map((point, idx) => {
+              const intensity = point.count / maxCount;
+              const size = 60 + intensity * 80;
+              const opacity = 0.3 + intensity * 0.7;
+              
+              return (
+                <div
+                  key={idx}
+                  className="flex flex-col items-center justify-center p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+                >
+                  <div
+                    className="rounded-full bg-accent mb-2"
+                    style={{
+                      width: `${size}px`,
+                      height: `${size}px`,
+                      opacity: opacity,
                     }}
-                  >
-                    <Popup>
-                      <div>
-                        <p className="font-semibold">Footfall: {point.count}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {point.lat.toFixed(4)}, {point.lng.toFixed(4)}
-                        </p>
-                      </div>
-                    </Popup>
-                  </CircleMarker>
-                );
-              })}
-            </MapContainer>
+                  />
+                  <p className="text-xs font-medium">Loc {idx + 1}</p>
+                  <p className="text-xs text-muted-foreground">{point.count} visits</p>
+                </div>
+              );
+            })}
           </div>
         </CardContent>
       </Card>
